@@ -4,38 +4,70 @@ services:
     build: ./gateway
     ports:
       - "3000:3000"
+    depends_on:
+      - auth-service
+      - user-service
+      - product-service
+      - order-service
+    restart: always
 
   auth-service:
     build: ./auth-service
     ports:
       - "4000:4000"
     env_file: .env
+    depends_on:
+      - mongo
+    restart: always
 
   user-service:
     build: ./user-service
     ports:
       - "4001:4001"
     env_file: .env
+    restart: always
 
   product-service:
     build: ./product-service
     ports:
       - "4002:4002"
     env_file: .env
+    depends_on:
+      - redis
+      - mongo
+    restart: always
 
   order-service:
     build: ./order-service
     ports:
       - "4003:4003"
     env_file: .env
+    depends_on:
+      - rabbitmq
+      - mongo
+    restart: always
 
   notification-service:
     build: ./notification-service
+    depends_on:
+      - rabbitmq
+    restart: always
 
   redis:
     image: redis
+    ports:
+      - "6379:6379"
+    restart: always
 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
+      - "5672:5672"
       - "15672:15672"
+    restart: always
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    restart: always
