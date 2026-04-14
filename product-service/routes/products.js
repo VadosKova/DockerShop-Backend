@@ -43,9 +43,9 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", auth, admin, async (req, res) => {
-  const { title, price } = req.body;
+  const { title, category, description, price } = req.body;
 
-  if (!title || !price) {
+  if (!title || !category || !description || !price) {
     return res.status(400).json({ message: t(req, "INVALID_DATA") });
   }
 
