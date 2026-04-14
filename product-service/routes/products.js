@@ -2,6 +2,7 @@ const router = require("express").Router();
 const Product = require("../models/Product");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
+const t = require("../utils/i18n");
 
 
 router.get("/", async (req, res) => {
@@ -32,7 +33,9 @@ router.get("/:id", async (req, res) => {
 
   const product = await Product.findById(req.params.id);
 
-  if (!product) return res.status(404).json({ message: "Not found" });
+  if (!product) {
+    return res.status(404).json({ message: t(req, "NOT_FOUND") });
+  }
 
   await req.redis.set(key, JSON.stringify(product), { EX: 120 });
 
@@ -40,6 +43,12 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", auth, admin, async (req, res) => {
+  const { title, price } = req.body;
+
+  if (!title || !price) {
+    return res.status(400).json({ message: t(req, "INVALID_DATA") });
+  }
+
   const product = await Product.create(req.body);
 
   await req.redis.flushAll();
@@ -54,13 +63,21 @@ router.put("/:id", auth, admin, async (req, res) => {
     { new: true }
   );
 
+  if (!product) {
+    return res.status(404).json({ message: t(req, "NOT_FOUND") });
+  }
+
   await req.redis.flushAll();
 
   res.json(product);
 });
 
 router.delete("/:id", auth, admin, async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id);
+  const product = await Product.findByIdAndDelete(req.params.id);
+
+  if (!product) {
+    return res.status(404).json({ message: t(req, "NOT_FOUND") });
+  }
 
   await req.redis.flushAll();
 
