@@ -1,0 +1,41 @@
+services:
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "4000:4000"
+    env_file: .env
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "4001:4001"
+    env_file: .env
+
+  product-service:
+    build: ./product-service
+    ports:
+      - "4002:4002"
+    env_file: .env
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "4003:4003"
+    env_file: .env
+
+  notification-service:
+    build: ./notification-service
+
+  redis:
+    image: redis
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
