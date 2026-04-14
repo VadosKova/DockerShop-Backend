@@ -11,7 +11,7 @@ async function start() {
   ch.consume("orders", (msg) => {
     const data = JSON.parse(msg.content.toString());
 
-    console.log("📩 EVENT:", data);
+    console.log("EVENT:", data);
 
     ch.ack(msg);
   });
