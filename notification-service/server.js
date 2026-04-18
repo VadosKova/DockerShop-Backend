@@ -1,31 +1,39 @@
 const amqp = require("amqplib");
 
 async function start() {
-  const conn = await amqp.connect("amqp://rabbitmq");
-  const ch = await conn.createChannel();
+  try {
+    console.log("Connecting to RabbitMQ...");
 
-  await ch.assertQueue("events");
+    const conn = await amqp.connect("amqp://rabbitmq");
+    const ch = await conn.createChannel();
 
-  console.log("Notification service started");
+    await ch.assertQueue("events");
 
-  ch.consume("events", (msg) => {
-    const event = JSON.parse(msg.content.toString());
+    console.log("Notification service started");
 
-    switch (event.type) {
-      case "order.created":
-        console.log(`Email: Order created for user ${event.userId}`);
-        break;
+    ch.consume("events", (msg) => {
+      const event = JSON.parse(msg.content.toString());
 
-      case "order.status":
-        console.log(`Email: Order ${event.orderId} status = ${event.status}`);
-        break;
+      switch (event.type) {
+        case "order.created":
+          console.log(`Email: Order created for user ${event.userId}`);
+          break;
 
-      default:
-        console.log("Unknown event", event);
-    }
+        case "order.status":
+          console.log(`Email: Order ${event.orderId} status = ${event.status}`);
+          break;
 
-    ch.ack(msg);
-  });
+        default:
+          console.log("Unknown event:", event);
+      }
+
+      ch.ack(msg);
+    });
+
+  } catch (error) {
+    console.log("RabbitMQ not ready, retry later...");
+    setTimeout(start, 5000);
+  }
 }
 
 start();
