@@ -5,7 +5,7 @@ module.exports = mongoose.model("Order", {
   items: Array,
   status: {
     type: String,
-    enum: ["Pending", "Paid", "Shipped", "Cancelled"],
+    enum: ["Pending", "Paid", "Cancelled"],
     default: "Pending"
   }
 });
