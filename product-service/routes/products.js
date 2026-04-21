@@ -1,60 +1,9 @@
 const router = require("express").Router();
-const path = require("path");
-const fs = require("fs");
-const multer = require("multer");
 const Product = require("../models/Product");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const t = require("../utils/i18n");
 
-const UPLOAD_DIR = path.join(__dirname, "../uploads");
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${req.params.id}-${Date.now()}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = [".jpg", ".jpeg", ".png"];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) cb(null, true);
-    else cb(new Error("Only JPG and PNG allowed"));
-  },
-});
-
-router.get("/image/:filename", (req, res) => {
-  const file = path.join(UPLOAD_DIR, req.params.filename);
-  if (!fs.existsSync(file)) return res.status(404).json({ message: "Not found" });
-  res.sendFile(file);
-});
-
-router.post("/:id/image", auth, admin, upload.single("image"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: t(req, "INVALID_DATA") });
-
-  const existing = await Product.findById(req.params.id);
-  if (existing?.image) {
-    const old = path.join(UPLOAD_DIR, existing.image);
-    if (fs.existsSync(old)) fs.unlinkSync(old);
-  }
-
-  const product = await Product.findByIdAndUpdate(
-    req.params.id,
-    { image: req.file.filename },
-    { new: true }
-  );
-
-  if (!product) return res.status(404).json({ message: t(req, "NOT_FOUND") });
-
-  await req.redis.flushAll();
-  res.json(product);
-});
 
 router.get("/", async (req, res) => {
   const { category, search } = req.query;
@@ -128,11 +77,6 @@ router.delete("/:id", auth, admin, async (req, res) => {
 
   if (!product) {
     return res.status(404).json({ message: t(req, "NOT_FOUND") });
-  }
-
-  if (product.image) {
-    const file = path.join(UPLOAD_DIR, product.image);
-    if (fs.existsSync(file)) fs.unlinkSync(file);
   }
 
   await req.redis.flushAll();
